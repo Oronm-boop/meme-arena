@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/meme_arena.json`.
  */
 export type MemeArena = {
-    "address": "6F6LttArcscELmxWSVZfrH3Mv5UhhBQZQLmdHRdd6G89",
+    "address": "3SFNAgqxdxamXWyn5CbQ5pJ9L27nE1dm8iFY1sBnpQMC",
     "metadata": {
         "name": "memeArena",
         "version": "0.1.0",
@@ -314,30 +314,19 @@ export type MemeArena = {
                     "address": "11111111111111111111111111111111"
                 }
             ],
-            "args": [
-                {
-                    "name": "winnerSide",
-                    "type": {
-                        "option": {
-                            "defined": {
-                                "name": "side"
-                            }
-                        }
-                    }
-                }
-            ]
+            "args": []
         },
         {
             "name": "autoSettleGame",
             "discriminator": [
-                165,
-                117,
-                36,
-                180,
-                81,
-                22,
-                59,
-                241
+                145,
+                31,
+                128,
+                151,
+                139,
+                140,
+                113,
+                160
             ],
             "accounts": [
                 {

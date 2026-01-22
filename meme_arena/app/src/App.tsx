@@ -7,6 +7,8 @@ import { Toast, useToast } from './components/Toast'
 import { BetModal } from './components/BetModal'
 import { Countdown, getTodayDateString } from './components/Countdown'
 import { useMemeArenaProgram, PROGRAM_ID } from './utils/anchor'
+import { fetchTodayArenaConfig, DEFAULT_ARENA_CONFIG } from './utils/arenaApi'
+import type { ArenaConfig } from './utils/arenaApi'
 import { PublicKey } from '@solana/web3.js'
 import { BN } from '@coral-xyz/anchor'
 import { useWallet } from '@solana/wallet-adapter-react'
@@ -31,6 +33,9 @@ function GameContent() {
   const [poolA, setPoolA] = useState(0);
   const [poolB, setPoolB] = useState(0);
 
+  // 阵营配置（从后端获取）
+  const [arenaConfig, setArenaConfig] = useState<ArenaConfig>(DEFAULT_ARENA_CONFIG);
+
   // 用户下注记录
   const [userBet, setUserBet] = useState<any>(null);
   
@@ -54,6 +59,20 @@ function GameContent() {
       PROGRAM_ID
     );
     return pda;
+  }, []);
+
+  // 获取阵营配置（从后端API）
+  useEffect(() => {
+    const loadArenaConfig = async () => {
+      try {
+        const config = await fetchTodayArenaConfig();
+        setArenaConfig(config);
+        console.log("阵营配置加载成功:", config);
+      } catch (error) {
+        console.error("加载阵营配置失败:", error);
+      }
+    };
+    loadArenaConfig();
   }, []);
 
   // Fetch Game State 首先获取game的PDA
@@ -273,6 +292,35 @@ function GameContent() {
     }
   }, [program, publicKey, userBet, gamePda, showToast, fetchUserBet]);
 
+  // 手动结算（测试用）
+  const handleManualSettle = useCallback(async () => {
+    if (!program || !publicKey || !gameAccount) return;
+
+    try {
+      setLoading(true);
+      const feeVault = gameAccount.feeVault;
+
+      await program.methods
+        .settleGame()
+        .accounts({
+          game: gamePda,
+          feeVault: feeVault,
+          authority: publicKey,
+        })
+        .rpc();
+
+      console.log("手动结算成功!");
+      showToast("手动结算成功！", "success");
+      await fetchGameState();
+      await fetchUserBet();
+    } catch (e: any) {
+      console.error("手动结算失败:", e);
+      showToast(`结算失败: ${e.message || '未知错误'}`, "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [program, publicKey, gameAccount, gamePda, showToast, fetchGameState, fetchUserBet]);
+
   // 核心战场组件
   // 我们需要把下注函数传递给 Arena，或者在这里处理
   // 但为了保留 Arena 的 UI 纯度，我们可以把 Pool 数据传进去
@@ -360,7 +408,7 @@ function GameContent() {
       <BetModal
         isOpen={betModal.isOpen}
         team={betModal.team}
-        teamName={betModal.team === 'A' ? '练习生' : '挖掘机'}
+        teamName={betModal.team === 'A' ? arenaConfig.team_a.title : arenaConfig.team_b.title}
         onConfirm={executeBet}
         onCancel={closeBetModal}
       />
@@ -438,6 +486,20 @@ function GameContent() {
               </div>
             )}
 
+            {/* 手动结算按钮（测试用） */}
+            {gameAccount && gameAccount.status?.open !== undefined && publicKey && (
+              <div className="mb-4 p-4 border border-yellow-500/50 bg-yellow-900/20 rounded-xl">
+                <p className="text-yellow-300 text-sm mb-2">管理员工具（测试用）</p>
+                <button
+                  onClick={handleManualSettle}
+                  disabled={loading}
+                  className="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 rounded font-bold text-sm"
+                >
+                  {loading ? "结算中..." : "🔧 手动结算"}
+                </button>
+              </div>
+            )}
+
             {/* 核心战场组件 */}
             <Arena
               poolA={poolA}
@@ -456,6 +518,7 @@ function GameContent() {
               onClaim={handleClaimReward}
               hasClaimed={userBet?.claimed || false}
               isLoading={loading}
+              arenaConfig={arenaConfig}
             />
 
             {/* 调试信息 (Optional) */}

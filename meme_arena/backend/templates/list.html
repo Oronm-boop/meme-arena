@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}} - Meme Arena</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎪 Meme Arena 阵营配置管理</h1>
+            <a href="/admin/new" class="btn btn-primary">+ 新建配置</a>
+        </header>
+
+        <main>
+            <table>
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>红队 (Team A)</th>
+                        <th>蓝队 (Team B)</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .configs}}
+                    <tr>
+                        <td class="date">{{.Date}}</td>
+                        <td>
+                            <div class="team-info">
+                                <span class="color-dot" style="background-color: {{.TeamAColor}}"></span>
+                                <strong>{{.TeamAName}}</strong>
+                                <small>{{.TeamATitle}}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="team-info">
+                                <span class="color-dot" style="background-color: {{.TeamBColor}}"></span>
+                                <strong>{{.TeamBName}}</strong>
+                                <small>{{.TeamBTitle}}</small>
+                            </div>
+                        </td>
+                        <td class="time">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+                        <td class="actions">
+                            <a href="/admin/edit/{{.ID}}" class="btn btn-small">编辑</a>
+                            <form method="POST" action="/admin/delete/{{.ID}}" style="display:inline;" onsubmit="return confirm('确定删除这条配置吗？')">
+                                <button type="submit" class="btn btn-small btn-danger">删除</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="5" class="empty">暂无配置，点击右上角新建</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </main>
+
+        <footer>
+            <p>API 接口: <code>GET /api/arena/today</code> - 获取今日阵营配置</p>
+        </footer>
+    </div>
+</body>
+</html>
