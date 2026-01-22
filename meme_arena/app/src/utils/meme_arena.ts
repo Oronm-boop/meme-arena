@@ -326,6 +326,61 @@ export type MemeArena = {
                     }
                 }
             ]
+        },
+        {
+            "name": "autoSettleGame",
+            "discriminator": [
+                165,
+                117,
+                36,
+                180,
+                81,
+                22,
+                59,
+                241
+            ],
+            "accounts": [
+                {
+                    "name": "game",
+                    "writable": true
+                },
+                {
+                    "name": "vault",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    118,
+                                    97,
+                                    117,
+                                    108,
+                                    116
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "game"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "feeVault",
+                    "writable": true
+                },
+                {
+                    "name": "caller",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "systemProgram",
+                    "address": "11111111111111111111111111111111"
+                }
+            ],
+            "args": []
         }
     ],
     "accounts": [

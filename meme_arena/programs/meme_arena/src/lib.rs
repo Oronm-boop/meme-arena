@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::system_instruction;
 
 // ⚠️ 注意：Deploy 后记得用 anchor keys sync 更新 ID
-declare_id!("6F6LttArcscELmxWSVZfrH3Mv5UhhBQZQLmdHRdd6G89");
+declare_id!("3SFNAgqxdxamXWyn5CbQ5pJ9L27nE1dm8iFY1sBnpQMC");
 
 #[program]
 pub mod meme_arena {
@@ -76,7 +76,7 @@ pub mod meme_arena {
     }
 
     // 3. 结算 (Settle Game)
-    pub fn settle_game(ctx: Context<SettleGame>, winner_side: Option<Side>) -> Result<()> {
+    pub fn settle_game(ctx: Context<SettleGame>) -> Result<()> {
         let game = &mut ctx.accounts.game;
         // let clock = Clock::get()?;
 
@@ -84,15 +84,11 @@ pub mod meme_arena {
         // require!(clock.unix_timestamp >= game.deadline, GameError::GameNotEndedYet);
         require!(game.status == GameStatus::Open, GameError::GameAlreadySettled);
         
-        // 判定赢家: 如果手动指定了就用指定的，否则资金池大的赢
-        let winner = if let Some(side) = winner_side {
-            side
+        // 判定赢家: 资金池大的赢 (钱多即正义)
+        let winner = if game.total_pool_a > game.total_pool_b {
+            Side::TeamA
         } else {
-            if game.total_pool_a > game.total_pool_b {
-                Side::TeamA
-            } else {
-                Side::TeamB // 如果相等，默认 TeamB 赢 (极简处理)
-            }
+            Side::TeamB // 如果相等，默认 TeamB 赢 (极简处理)
         };
 
         game.winner = Some(winner);
@@ -134,7 +130,62 @@ pub mod meme_arena {
         Ok(())
     }
 
-    // 4. 领奖 (Claim Reward)
+    // 4. 自动结算 (Auto Settle Game) - 任何人在到达 deadline 后都可以调用
+    pub fn auto_settle_game(ctx: Context<AutoSettleGame>) -> Result<()> {
+        let game = &mut ctx.accounts.game;
+        let clock = Clock::get()?;
+
+        // 强制检查：必须到达 deadline 才能结算
+        require!(clock.unix_timestamp >= game.deadline, GameError::GameNotEndedYet);
+        require!(game.status == GameStatus::Open, GameError::GameAlreadySettled);
+        
+        // 判定赢家: 资金池大的赢 (钱多即正义)
+        let winner = if game.total_pool_a > game.total_pool_b {
+            Side::TeamA
+        } else {
+            Side::TeamB // 如果相等，默认 TeamB 赢 (极简处理)
+        };
+
+        game.winner = Some(winner);
+        game.status = GameStatus::Settled;
+
+        // 🟢 抽水逻辑: Vault -> Fee Vault
+        // 计算总奖池
+        let total_pool = game.total_pool_a + game.total_pool_b;
+        // 计算手续费 (5%)
+        let fee = total_pool * 5 / 100;
+
+        if fee > 0 {
+            // 从 Vault 转手续费给开发者
+            let game_key = game.key();
+            let seeds = &[
+                b"vault",
+                game_key.as_ref(),
+                &[ctx.bumps.vault],
+            ];
+            let signer = &[&seeds[..]];
+
+            let ix = system_instruction::transfer(
+                &ctx.accounts.vault.key(),
+                &game.fee_vault,
+                fee,
+            );
+
+            anchor_lang::solana_program::program::invoke_signed(
+                &ix,
+                &[
+                    ctx.accounts.vault.to_account_info(),
+                    ctx.accounts.system_program.to_account_info(),
+                    ctx.accounts.fee_vault.to_account_info(),
+                ],
+                signer,
+            )?;
+        }
+
+        Ok(())
+    }
+
+    // 5. 领奖 (Claim Reward)
     pub fn claim_reward(ctx: Context<ClaimReward>) -> Result<()> {
         let game = &ctx.accounts.game;
         let bet = &mut ctx.accounts.bet;
@@ -274,6 +325,30 @@ pub struct SettleGame<'info> {
     pub fee_vault: AccountInfo<'info>, // 手续费接收账户
 
     pub authority: Signer<'info>, // 管理员
+    pub system_program: Program<'info, System>, // 系统程序
+}
+
+// 自动结算账户结构 - 任何人都可以调用（不需要 authority）
+#[derive(Accounts)]
+pub struct AutoSettleGame<'info> {
+    #[account(mut)]
+    pub game: Account<'info, Game>, // 游戏账户
+
+    #[account(
+        mut,
+        seeds = [b"vault", game.key().as_ref()],
+        bump
+    )]
+    /// CHECK: 转出手续费用的 PDA source
+    pub vault: SystemAccount<'info>, // 资金池 Vault PDA
+
+    /// CHECK: 接收手续费的账户
+    #[account(mut, address = game.fee_vault)]
+    pub fee_vault: AccountInfo<'info>, // 手续费接收账户
+
+    #[account(mut)]
+    pub caller: Signer<'info>, // 任何调用者（支付交易费）
+    
     pub system_program: Program<'info, System>, // 系统程序
 }
 
