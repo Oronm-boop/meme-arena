@@ -4,16 +4,26 @@ use anchor_lang::solana_program::system_instruction;
 // ⚠️ 注意：Deploy 后记得用 anchor keys sync 更新 ID
 declare_id!("3SFNAgqxdxamXWyn5CbQ5pJ9L27nE1dm8iFY1sBnpQMC");
 
+// 🔒 全局管理员地址（合约部署者）- 只有此地址可以初始化和结算游戏
+pub const ADMIN_PUBKEY: &str = "ykLHN2JeHCanSKN7Rfzzj9tAW7R1APoeq9rN5DZaLjZ";
+
 #[program]
 pub mod meme_arena {
     use super::*;
 
-    // 1. 初始化游戏
+    // 1. 初始化游戏（仅管理员）
     pub fn initialize_game(
         ctx: Context<InitializeGame>, 
         topic: String, 
         deadline: i64
     ) -> Result<()> {
+        // 🔒 检查是否是管理员
+        let admin_pubkey = ADMIN_PUBKEY.parse::<Pubkey>().unwrap();
+        require!(
+            ctx.accounts.authority.key() == admin_pubkey,
+            GameError::Unauthorized
+        );
+
         let game = &mut ctx.accounts.game;
         game.authority = ctx.accounts.authority.key();
         game.topic = topic;
@@ -75,8 +85,15 @@ pub mod meme_arena {
         Ok(())
     }
 
-    // 3. 结算 (Settle Game)
+    // 3. 结算 (Settle Game) - 仅管理员
     pub fn settle_game(ctx: Context<SettleGame>) -> Result<()> {
+        // 🔒 检查是否是管理员
+        let admin_pubkey = ADMIN_PUBKEY.parse::<Pubkey>().unwrap();
+        require!(
+            ctx.accounts.authority.key() == admin_pubkey,
+            GameError::Unauthorized
+        );
+
         let game = &mut ctx.accounts.game;
         // let clock = Clock::get()?;
 
@@ -431,4 +448,6 @@ pub enum GameError {
     NoWinner,
     #[msg("You did not bet on the winning side.")]
     NotWinner,
+    #[msg("Unauthorized: Only admin can perform this action.")]
+    Unauthorized,
 }

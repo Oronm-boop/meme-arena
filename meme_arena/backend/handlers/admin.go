@@ -47,6 +47,10 @@ func AdminEditPage(c *gin.Context) {
 		return
 	}
 
+	// 把 JSON 数组转换成多行文本格式，方便编辑
+	config.TeamAMemes = ConvertJSONToLines(config.TeamAMemes)
+	config.TeamBMemes = ConvertJSONToLines(config.TeamBMemes)
+
 	c.HTML(http.StatusOK, "admin.html", gin.H{
 		"title":  "编辑阵营配置",
 		"config": config,
@@ -110,12 +114,13 @@ func convertLinesToJSON(lines string) string {
 	if lines == "" {
 		return "[]"
 	}
-	// 按行分割，去除空行
+	// 按行分割，去除空行和无效值
 	parts := strings.Split(lines, "\n")
 	var urls []string
 	for _, line := range parts {
 		trimmed := strings.TrimSpace(line)
-		if trimmed != "" {
+		// 过滤空行和无效值（如 "[]"）
+		if trimmed != "" && trimmed != "[]" && strings.HasPrefix(trimmed, "http") {
 			urls = append(urls, trimmed)
 		}
 	}

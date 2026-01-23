@@ -6,26 +6,46 @@ import { Danmaku } from './components/Danmaku'
 import { Toast, useToast } from './components/Toast'
 import { BetModal } from './components/BetModal'
 import { Countdown, getTodayDateString } from './components/Countdown'
+import { LanguageSwitcher } from './components/LanguageSwitcher'
 import { useMemeArenaProgram, PROGRAM_ID } from './utils/anchor'
 import { fetchTodayArenaConfig, DEFAULT_ARENA_CONFIG } from './utils/arenaApi'
 import type { ArenaConfig } from './utils/arenaApi'
 import { PublicKey } from '@solana/web3.js'
 import { BN } from '@coral-xyz/anchor'
 import { useWallet } from '@solana/wallet-adapter-react'
+import { Buffer } from 'buffer';
+
+// 管理员钱包地址（合约部署者）
+const ADMIN_WALLET = "ykLHN2JeHCanSKN7Rfzzj9tAW7R1APoeq9rN5DZaLjZ";
 
 // 生成今日的 Topic（带日期）
-const getTodayTopic = () => {
+const getTodayTopic = (suffix: number = 0) => {
   const dateStr = getTodayDateString();
-  return `MemeArena_${dateStr}`;
+  return suffix > 0 ? `MemeArena_${dateStr}_v${suffix}` : `MemeArena_${dateStr}`;
 };
 
-// Game Configuration - 每日动态生成
-const TOPIC = getTodayTopic();
+import { useTranslation } from 'react-i18next';
 
 function GameContent() {
+  const { t } = useTranslation();
   const { publicKey } = useWallet();
   const program = useMemeArenaProgram();
   const { toast, showToast, hideToast } = useToast();
+
+  // Topic 版本号（用于测试重置）
+  const [topicVersion, setTopicVersion] = useState(() => {
+    // 从 localStorage 读取版本号
+    const saved = localStorage.getItem('meme_arena_topic_version');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  // 动态生成 TOPIC
+  const TOPIC = useMemo(() => getTodayTopic(topicVersion), [topicVersion]);
+
+  // 判断当前用户是否是管理员
+  const isAdmin = useMemo(() => {
+    return publicKey?.toString() === ADMIN_WALLET;
+  }, [publicKey]);
 
   // Real Game Data State
   const [gameAccount, setGameAccount] = useState<any>(null);
@@ -38,7 +58,7 @@ function GameContent() {
 
   // 用户下注记录
   const [userBet, setUserBet] = useState<any>(null);
-  
+
   // 是否正在结算
   const [isSettling, setIsSettling] = useState(false);
   const settleAttemptedRef = useRef(false); // 防止重复调用结算
@@ -59,7 +79,7 @@ function GameContent() {
       PROGRAM_ID
     );
     return pda;
-  }, []);
+  }, [TOPIC]);
 
   // 获取阵营配置（从后端API）
   useEffect(() => {
@@ -153,10 +173,10 @@ function GameContent() {
 
     try {
       console.log("触发自动结算...");
-      
+
       // 获取 fee_vault 地址
       const feeVault = gameAccount.feeVault;
-      
+
       const tx = await program.methods
         .autoSettleGame()
         .accounts({
@@ -165,17 +185,17 @@ function GameContent() {
           caller: publicKey,
         })
         .rpc();
-      
+
       console.log("自动结算成功!", tx);
       showToast("战斗结束！正在计算胜者...", "success");
-      
+
       // 刷新游戏状态
       await fetchGameState();
       await fetchUserBet();
     } catch (e: any) {
       console.error("自动结算失败:", e);
       const errorStr = e.toString();
-      
+
       // 如果是已经结算的错误，静默处理
       if (errorStr.includes("GameAlreadySettled") || errorStr.includes("already")) {
         console.log("游戏已经结算过了");
@@ -224,17 +244,17 @@ function GameContent() {
     if (!program || !publicKey) return;
     try {
       setLoading(true);
-      
+
       // 设置今天晚上8点为 deadline
       const now = new Date();
       const todayDeadline = new Date(now);
       todayDeadline.setHours(20, 0, 0, 0); // 晚上8点
-      
+
       // 如果现在已经过了8点，设置为明天8点
       if (now >= todayDeadline) {
         todayDeadline.setDate(todayDeadline.getDate() + 1);
       }
-      
+
       const deadline = new BN(Math.floor(todayDeadline.getTime() / 1000));
 
       await program.methods
@@ -262,7 +282,7 @@ function GameContent() {
 
     try {
       setLoading(true);
-      
+
       const tx = await program.methods
         .claimReward()
         .accounts({
@@ -273,7 +293,7 @@ function GameContent() {
 
       console.log("奖励领取成功!", tx);
       showToast("恭喜！奖励已发送到你的钱包！", "success");
-      
+
       // 刷新用户下注状态
       await fetchUserBet();
     } catch (e: any) {
@@ -292,6 +312,18 @@ function GameContent() {
     }
   }, [program, publicKey, userBet, gamePda, showToast, fetchUserBet]);
 
+  // 重置游戏（测试用）- 通过改变 topic 版本创建新游戏
+  const handleResetGame = useCallback(() => {
+    const newVersion = topicVersion + 1;
+    setTopicVersion(newVersion);
+    localStorage.setItem('meme_arena_topic_version', String(newVersion));
+    setGameAccount(null);
+    setUserBet(null);
+    setPoolA(0);
+    setPoolB(0);
+    showToast(`游戏已重置！新版本: v${newVersion}`, "success");
+  }, [topicVersion, showToast]);
+
   // 手动结算（测试用）
   const handleManualSettle = useCallback(async () => {
     if (!program || !publicKey || !gameAccount) return;
@@ -305,7 +337,6 @@ function GameContent() {
         .accounts({
           game: gamePda,
           feeVault: feeVault,
-          authority: publicKey,
         })
         .rpc();
 
@@ -435,10 +466,11 @@ function GameContent() {
           <div className="flex items-center gap-2">
             <span className="text-2xl">🎪</span>
             <h1 className="text-xl font-bold tracking-tighter bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-              Meme 竞技场
+              {t('app.title')}
             </h1>
           </div>
-          <div>
+          <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <WalletMultiButton style={{ backgroundColor: '#222', border: '1px solid #444' }} />
           </div>
         </header>
@@ -447,18 +479,18 @@ function GameContent() {
         <main className="pt-24 px-4 container mx-auto flex flex-col items-center justify-center min-h-[80vh]">
           <div className="text-center space-y-6 w-full">
             <h2 className="text-5xl md:text-7xl font-black italic uppercase tracking-tighter animate-pulse text-transparent bg-clip-text bg-gradient-to-br from-yellow-400 to-red-600 drop-shadow-[0_0_15px_rgba(255,0,0,0.5)]">
-              抽象大乱斗
+              {t('app.subtitle')}
             </h2>
             <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-12">
-              选择你的阵营。下注 SOL。赢家通吃。
+              {t('app.description')}
               <br />
-              <span className="text-xs text-gray-600">（纯粹 Vibe。莫得逻辑。）</span>
+              <span className="text-xs text-gray-600">{t('app.vibe')}</span>
             </p>
 
             {/* 倒计时组件 */}
             {gameAccount && gameAccount.status?.open !== undefined && (
               <div className="mb-8">
-                <Countdown 
+                <Countdown
                   deadline={gameAccount.deadline?.toNumber?.() || 0}
                   onDeadlineReached={handleAutoSettle}
                 />
@@ -468,35 +500,48 @@ function GameContent() {
             {/* 结算中提示 */}
             {isSettling && (
               <div className="mb-8 p-4 border border-yellow-500/50 bg-yellow-900/20 rounded-xl animate-pulse">
-                <p className="text-yellow-300 font-bold">正在结算中，请稍候...</p>
+                <p className="text-yellow-300 font-bold">{t('app.settling')}</p>
               </div>
             )}
 
-            {/* Initialize Button (Only if game not found) */}
-            {!gameAccount && program && (
+            {/* Initialize Button (仅管理员可见) */}
+            {!gameAccount && program && isAdmin && (
               <div className="mb-8 p-4 border border-red-500/50 bg-red-900/20 rounded-xl">
-                <p className="mb-2 text-red-300">⚠️ 今日战场 "{TOPIC}" 尚未初始化</p>
+                <p className="mb-2 text-red-300">{t('app.not_initialized', { topic: TOPIC })}</p>
                 <button
                   onClick={handleInitialize}
                   disabled={loading}
                   className="px-6 py-2 bg-red-600 hover:bg-red-500 rounded font-bold"
                 >
-                  {loading ? "初始化中..." : "⚔️ 初始化今日战场 (Devnet)"}
+                  {loading ? t('app.init_loading') : t('app.init_button')}
                 </button>
               </div>
             )}
 
-            {/* 手动结算按钮（测试用） */}
-            {gameAccount && gameAccount.status?.open !== undefined && publicKey && (
+            {/* 管理员工具（仅管理员可见） */}
+            {isAdmin && gameAccount && (
               <div className="mb-4 p-4 border border-yellow-500/50 bg-yellow-900/20 rounded-xl">
-                <p className="text-yellow-300 text-sm mb-2">管理员工具（测试用）</p>
-                <button
-                  onClick={handleManualSettle}
-                  disabled={loading}
-                  className="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 rounded font-bold text-sm"
-                >
-                  {loading ? "结算中..." : "🔧 手动结算"}
-                </button>
+                <p className="text-yellow-300 text-sm mb-2">{t('app.admin_tools', { topic: TOPIC })}</p>
+                <div className="flex gap-2 flex-wrap">
+                  {/* 手动结算按钮 */}
+                  {gameAccount.status?.open !== undefined && (
+                    <button
+                      onClick={handleManualSettle}
+                      disabled={loading}
+                      className="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 rounded font-bold text-sm"
+                    >
+                      {loading ? t('app.settle_loading') : t('app.manual_settle')}
+                    </button>
+                  )}
+                  {/* 重置游戏按钮 */}
+                  <button
+                    onClick={handleResetGame}
+                    disabled={loading}
+                    className="px-6 py-2 bg-red-600 hover:bg-red-500 rounded font-bold text-sm"
+                  >
+                    {t('app.reset_game')}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -509,11 +554,11 @@ function GameContent() {
               isSettled={gameAccount?.status?.settled !== undefined}
               winner={
                 gameAccount?.winner?.teamA !== undefined ? "A" :
-                gameAccount?.winner?.teamB !== undefined ? "B" : null
+                  gameAccount?.winner?.teamB !== undefined ? "B" : null
               }
               userBetSide={
                 userBet?.side?.teamA !== undefined ? "A" :
-                userBet?.side?.teamB !== undefined ? "B" : null
+                  userBet?.side?.teamB !== undefined ? "B" : null
               }
               onClaim={handleClaimReward}
               hasClaimed={userBet?.claimed || false}

@@ -1,6 +1,9 @@
 package config
 
-import "os"
+import (
+	"os"
+	"strconv"
+)
 
 // Config 应用配置
 type Config struct {
@@ -34,13 +37,13 @@ type OSSConfig struct {
 // LoadConfig 加载配置
 func LoadConfig() *Config {
 	return &Config{
-		// MySQL 配置（写死）
+		// MySQL 配置（从环境变量读取）
 		MySQL: MySQLConfig{
-			Host:     "123.207.206.172",
-			Port:     3306,
-			User:     "root",
-			Password: "l746904924..",
-			Database: "arena",
+			Host:     getEnv("MYSQL_HOST", "127.0.0.1"),
+			Port:     getEnvInt("MYSQL_PORT", 3306),
+			User:     getEnv("MYSQL_USER", "root"),
+			Password: getEnv("MYSQL_PASSWORD", ""),
+			Database: "arena", // 数据库名通常不变，或者也可以加环境变量
 		},
 		Server: ServerConfig{
 			Port: 8080,
@@ -61,4 +64,17 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// getEnvInt 获取整型环境变量
+func getEnvInt(key string, defaultValue int) int {
+	valueStr := getEnv(key, "")
+	if valueStr == "" {
+		return defaultValue
+	}
+	value, err := strconv.Atoi(valueStr)
+	if err != nil {
+		return defaultValue
+	}
+	return value
 }

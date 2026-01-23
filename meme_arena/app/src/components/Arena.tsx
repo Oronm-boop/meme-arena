@@ -1,18 +1,19 @@
-import {type FC, useEffect, useState } from 'react';
+import { type FC, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useWallet } from '@solana/wallet-adapter-react';
 import type { ArenaConfig } from '../utils/arenaApi';
 
 // 引入默认图片资源（作为 fallback）
-import kunImage from '../assets/蔡徐坤.gif';
-import fanImage from '../assets/奥特勤.jpg';
-import kun1 from '../assets/坤1.jpg';
-import kun2 from '../assets/坤2.jpg';
-import kun3 from '../assets/坤3.jpg';
-import kun4 from '../assets/坤4.jpg';
-import qin1 from '../assets/勤1.jpg';
-import qin2 from '../assets/勤2.jpg';
-import qin3 from '../assets/勤3.jpg';
-import qin4 from '../assets/勤4.jpg';
+import kunImage from '../assets/kun.gif';
+import fanImage from '../assets/qin.jpg';
+import kun1 from '../assets/kun1.jpg';
+import kun2 from '../assets/kun2.jpg';
+import kun3 from '../assets/kun3.jpg';
+import kun4 from '../assets/kun4.jpg';
+import qin1 from '../assets/qin1.jpg';
+import qin2 from '../assets/qin2.jpg';
+import qin3 from '../assets/qin3.jpg';
+import qin4 from '../assets/qin4.jpg';
 
 // 默认表情包
 const DEFAULT_MEMES_A = [kun1, kun2, kun3, kun4];
@@ -33,9 +34,9 @@ interface ArenaProps {
     arenaConfig: ArenaConfig;
 }
 
-export const Arena: FC<ArenaProps> = ({ 
-    poolA, 
-    poolB, 
+export const Arena: FC<ArenaProps> = ({
+    poolA,
+    poolB,
     onBet,
     isSettled,
     winner,
@@ -45,6 +46,7 @@ export const Arena: FC<ArenaProps> = ({
     isLoading = false,
     arenaConfig,
 }) => {
+    const { t } = useTranslation();
     const { connected } = useWallet();
     const total = poolA + poolB || 1;
     const percentA = (poolA / total) * 100;
@@ -62,8 +64,13 @@ export const Arena: FC<ArenaProps> = ({
     // 获取图片（优先使用配置，没有则使用默认）
     const teamAImage = teamA.image || kunImage;
     const teamBImage = teamB.image || fanImage;
-    const memesA = teamA.memes.length > 0 ? teamA.memes : DEFAULT_MEMES_A;
-    const memesB = teamB.memes.length > 0 ? teamB.memes : DEFAULT_MEMES_B;
+
+    // 过滤无效的 memes（空数组、包含 "[]" 字符串、非 http 开头的）
+    const isValidMemes = (memes: string[]) => {
+        return memes.length > 0 && memes.some(url => url.startsWith('http'));
+    };
+    const memesA = isValidMemes(teamA.memes) ? teamA.memes.filter(url => url.startsWith('http')) : DEFAULT_MEMES_A;
+    const memesB = isValidMemes(teamB.memes) ? teamB.memes.filter(url => url.startsWith('http')) : DEFAULT_MEMES_B;
 
     // 获取颜色（优先使用配置，没有则使用默认）
     const colorA = teamA.color || '#ec4899';
@@ -97,7 +104,7 @@ export const Arena: FC<ArenaProps> = ({
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-30">
                     <div className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full shadow-lg animate-bounce">
                         <span className="text-2xl">🏆</span>
-                        <span className="text-white font-black uppercase tracking-wider text-lg">WINNER!</span>
+                        <span className="text-white font-black uppercase tracking-wider text-lg">{t('arena.winner')}!</span>
                     </div>
                 </div>
             );
@@ -120,7 +127,7 @@ export const Arena: FC<ArenaProps> = ({
                 if (hasClaimed) {
                     return (
                         <div className="w-full py-3 bg-green-600/50 text-white font-bold rounded-xl text-center">
-                            已领取奖励 ✓
+                            {t('arena.claimed')}
                         </div>
                     );
                 } else {
@@ -130,7 +137,7 @@ export const Arena: FC<ArenaProps> = ({
                             disabled={isLoading}
                             className="w-full py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white font-black uppercase tracking-widest rounded-xl shadow-lg transform active:scale-95 transition-all animate-pulse disabled:opacity-50"
                         >
-                            {isLoading ? "领取中..." : "🎁 领取奖励"}
+                            {isLoading ? t('arena.claiming') : t('arena.claim_reward')}
                         </button>
                     );
                 }
@@ -138,21 +145,21 @@ export const Arena: FC<ArenaProps> = ({
             else if (userBetSide === team && winner !== team) {
                 return (
                     <div className="w-full py-3 bg-gray-600/50 text-gray-300 font-bold rounded-xl text-center">
-                        下次好运 😢
+                        {t('arena.better_luck')}
                     </div>
                 );
             }
             else {
                 return (
                     <div className="w-full py-3 bg-gray-800/50 text-gray-500 font-bold rounded-xl text-center">
-                        {winner === team ? "赢家通吃！" : "已落幕"}
+                        {winner === team ? t('arena.winner_takes_all') : t('arena.ended')}
                     </div>
                 );
             }
         }
 
         if (!connected) {
-            return <div className="text-xs text-gray-500">连接钱包下注</div>;
+            return <div className="text-xs text-gray-500">{t('arena.connect_wallet')}</div>;
         }
 
         const buttonColor = team === "A" ? colorA : colorB;
@@ -163,40 +170,40 @@ export const Arena: FC<ArenaProps> = ({
                 style={{ backgroundColor: buttonColor }}
                 className="w-full py-3 text-white font-black uppercase tracking-widest rounded-xl shadow-lg transform active:scale-95 transition-all hover:opacity-90"
             >
-                BET {team === "A" ? "RED" : "BLUE"}
+                {team === "A" ? t('arena.bet_red') : t('arena.bet_blue')}
             </button>
         );
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto p-4 relative flex flex-col gap-8">
+        <div className="w-full max-w-[1600px] mx-auto p-4 relative flex flex-col gap-8">
 
             {/* 结算结果公告 */}
             {isSettled && (
                 <div className="mb-4 p-6 bg-gradient-to-r from-purple-900/50 to-indigo-900/50 border border-purple-500/30 rounded-2xl text-center">
                     <div className="text-3xl mb-2">🎊</div>
                     <h3 className="text-2xl font-black text-white mb-2">
-                        今日战斗已结束！
+                        {t('arena.battle_ended')}
                     </h3>
                     <p className="text-purple-300 text-lg">
-                        获胜方：
+                        {t('arena.winner')}：
                         <span className="font-black text-xl" style={{ color: winner === "A" ? colorA : colorB }}>
-                            {winner === "A" ? `${teamA.title} (Team Red)` : `${teamB.title} (Team Blue)`}
+                            {winner === "A" ? `${teamA.title} (${t('arena.team_red')})` : `${teamB.title} (${t('arena.team_blue')})`}
                         </span>
                     </p>
                     {isUserWinner && (
                         <p className="text-yellow-400 mt-2 animate-pulse font-bold">
-                            恭喜你押中了！快领取你的奖励吧！
+                            {t('arena.you_won')}
                         </p>
                     )}
                     {isUserLoser && (
                         <p className="text-gray-400 mt-2">
-                            很遗憾，你押错了。下次再接再厉！
+                            {t('arena.you_lost')}
                         </p>
                     )}
                     {!userBetSide && (
                         <p className="text-gray-500 mt-2 text-sm">
-                            你今天没有参与下注
+                            {t('arena.no_bet')}
                         </p>
                     )}
                 </div>
@@ -206,7 +213,7 @@ export const Arena: FC<ArenaProps> = ({
             <div className="relative w-full h-8 bg-gray-800 rounded-full overflow-hidden border border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)] mb-4">
                 <div
                     className={`absolute top-0 left-0 h-full transition-all duration-1000 ease-out ${isSettled && winner !== "A" ? "opacity-30" : ""}`}
-                    style={{ 
+                    style={{
                         width: `${animatedWidthA}%`,
                         background: `linear-gradient(to right, ${colorA}, ${colorA}dd)`
                     }}
@@ -217,7 +224,7 @@ export const Arena: FC<ArenaProps> = ({
                 </div>
                 <div
                     className={`absolute top-0 right-0 h-full transition-all duration-1000 ease-out ${isSettled && winner !== "B" ? "opacity-30" : ""}`}
-                    style={{ 
+                    style={{
                         width: `${100 - animatedWidthA}%`,
                         background: `linear-gradient(to left, ${colorB}, ${colorB}dd)`
                     }}
@@ -236,21 +243,21 @@ export const Arena: FC<ArenaProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
 
                 {/* Team A 表情墙 */}
-                <div 
+                <div
                     className={`hidden md:flex md:col-span-3 flex-col gap-4 h-[600px] overflow-y-auto overflow-x-hidden p-2 rounded-xl border custom-scrollbar ${isSettled && winner !== "A" ? "opacity-40 grayscale" : ""}`}
-                    style={{ 
+                    style={{
                         backgroundColor: `${colorA}20`,
                         borderColor: `${colorA}40`
                     }}
                 >
                     <h4 className="text-center text-xs font-bold tracking-widest uppercase mb-2" style={{ color: colorA }}>
-                        {teamA.name} 集合
+                        {t('arena.team_red_collection', { name: teamA.name })}
                     </h4>
                     {memesA.map((src, i) => (
-                        <div 
-                            key={i} 
+                        <div
+                            key={i}
                             className="w-24 h-24 mx-auto aspect-square rounded-full overflow-hidden border-2 hover:scale-110 transition-transform cursor-pointer bg-black"
-                            style={{ 
+                            style={{
                                 borderColor: `${colorA}80`,
                                 boxShadow: `0 0 10px ${colorA}50`
                             }}
@@ -277,11 +284,11 @@ export const Arena: FC<ArenaProps> = ({
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 h-full">
+                    <div className="grid grid-cols-2 gap-40 h-full">
                         {/* Team A Card */}
-                        <div 
+                        <div
                             className={`flex flex-col items-center justify-between p-6 rounded-3xl transition-all duration-500 h-[500px] ${getCardStyle("A")}`}
-                            style={{ 
+                            style={{
                                 background: `linear-gradient(to bottom right, ${colorA}40, black)`,
                                 borderColor: `${colorA}50`
                             }}
@@ -289,14 +296,14 @@ export const Arena: FC<ArenaProps> = ({
                             {renderResultBadge("A")}
                             <div className="text-center">
                                 <div className="font-bold tracking-widest uppercase mb-4 opacity-80" style={{ color: colorA }}>
-                                    Team Red
+                                    {t('arena.team_red')}
                                 </div>
-                                <div 
+                                <div
                                     className={`w-40 h-40 mx-auto rounded-full border-4 overflow-hidden bg-black mb-6`}
-                                    style={{ 
+                                    style={{
                                         borderColor: winner === "A" ? '#facc15' : colorA,
-                                        boxShadow: winner === "A" 
-                                            ? '0 0 40px rgba(255,215,0,0.7)' 
+                                        boxShadow: winner === "A"
+                                            ? '0 0 40px rgba(255,215,0,0.7)'
                                             : `0 0 30px ${colorA}80`
                                     }}
                                 >
@@ -311,9 +318,9 @@ export const Arena: FC<ArenaProps> = ({
                         </div>
 
                         {/* Team B Card */}
-                        <div 
+                        <div
                             className={`flex flex-col items-center justify-between p-6 rounded-3xl transition-all duration-500 h-[500px] ${getCardStyle("B")}`}
-                            style={{ 
+                            style={{
                                 background: `linear-gradient(to bottom left, ${colorB}40, black)`,
                                 borderColor: `${colorB}50`
                             }}
@@ -321,14 +328,14 @@ export const Arena: FC<ArenaProps> = ({
                             {renderResultBadge("B")}
                             <div className="text-center">
                                 <div className="font-bold tracking-widest uppercase mb-4 opacity-80" style={{ color: colorB }}>
-                                    Team Blue
+                                    {t('arena.team_blue')}
                                 </div>
-                                <div 
+                                <div
                                     className={`w-40 h-40 mx-auto rounded-full border-4 overflow-hidden bg-black mb-6`}
-                                    style={{ 
+                                    style={{
                                         borderColor: winner === "B" ? '#facc15' : colorB,
-                                        boxShadow: winner === "B" 
-                                            ? '0 0 40px rgba(255,215,0,0.7)' 
+                                        boxShadow: winner === "B"
+                                            ? '0 0 40px rgba(255,215,0,0.7)'
                                             : `0 0 30px ${colorB}80`
                                     }}
                                 >
@@ -345,21 +352,21 @@ export const Arena: FC<ArenaProps> = ({
                 </div>
 
                 {/* Team B 表情墙 */}
-                <div 
+                <div
                     className={`hidden md:flex md:col-span-3 flex-col gap-4 h-[600px] overflow-y-auto overflow-x-hidden p-2 rounded-xl border custom-scrollbar ${isSettled && winner !== "B" ? "opacity-40 grayscale" : ""}`}
-                    style={{ 
+                    style={{
                         backgroundColor: `${colorB}20`,
                         borderColor: `${colorB}40`
                     }}
                 >
                     <h4 className="text-center text-xs font-bold tracking-widest uppercase mb-2" style={{ color: colorB }}>
-                        {teamB.name} 大队
+                        {t('arena.team_blue_collection', { name: teamB.name })}
                     </h4>
                     {memesB.map((src, i) => (
-                        <div 
-                            key={i} 
+                        <div
+                            key={i}
                             className="w-24 h-24 mx-auto aspect-square rounded-full overflow-hidden border-2 hover:scale-110 transition-transform cursor-pointer bg-black"
-                            style={{ 
+                            style={{
                                 borderColor: `${colorB}80`,
                                 boxShadow: `0 0 10px ${colorB}50`
                             }}

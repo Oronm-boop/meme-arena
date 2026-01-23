@@ -1,0 +1,36 @@
+{
+    "app": {
+        "title": "Meme Arena",
+        "subtitle": "Abstract Battle Royale",
+        "description": "Choose your side. Bet SOL. Winner Takes All.",
+        "vibe": "(Pure Vibe. No Logic.)",
+        "settling": "Settling in progress, please wait...",
+        "not_initialized": "⚠️ Today's battlefield \"{{topic}}\" not initialized",
+        "init_button": "⚔️ Initialize Battlefield (Devnet)",
+        "init_loading": "Initializing...",
+        "manual_settle": "🔧 Manual Settle",
+        "settle_loading": "Settling...",
+        "reset_game": "🔄 Reset Game (New)",
+        "admin_tools": "Admin Tools - Topic: {{topic}}"
+    },
+    "arena": {
+        "connect_wallet": "Connect Wallet to Bet",
+        "bet_red": "BET RED",
+        "bet_blue": "BET BLUE",
+        "battle_ended": "Today's Battle Ended!",
+        "winner": "Winner",
+        "you_won": "Congratulations! You won! Claim your reward now!",
+        "you_lost": "Unfortunately, you bet on the wrong side. Better luck next time!",
+        "no_bet": "You did not place a bet today",
+        "claimed": "Reward Claimed ✓",
+        "claim_reward": "🎁 Claim Reward",
+        "claiming": "Claiming...",
+        "better_luck": "Better luck next time 😢",
+        "winner_takes_all": "Winner Takes All!",
+        "ended": "Ended",
+        "team_red_collection": "{{name}} Collection",
+        "team_blue_collection": "{{name}} Squad",
+        "team_red": "Team Red",
+        "team_blue": "Team Blue"
+    }
+}

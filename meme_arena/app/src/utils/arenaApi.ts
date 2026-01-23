@@ -1,7 +1,7 @@
 // 阵营配置 API
 
 // API 基础地址（开发环境）
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 // 单个队伍配置
 export interface TeamConfig {

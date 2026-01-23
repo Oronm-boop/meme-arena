@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { type FC, useEffect, useState } from 'react';
 
 interface CountdownProps {
   deadline: number; // Unix 时间戳（秒）

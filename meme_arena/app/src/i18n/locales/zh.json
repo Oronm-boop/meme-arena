@@ -1,0 +1,36 @@
+{
+    "app": {
+        "title": "Meme 竞技场",
+        "subtitle": "抽象大乱斗",
+        "description": "选择你的阵营。下注 SOL。赢家通吃。",
+        "vibe": "（纯粹 Vibe。莫得逻辑。）",
+        "settling": "正在结算中，请稍候...",
+        "not_initialized": "⚠️ 今日战场 \"{{topic}}\" 尚未初始化",
+        "init_button": "⚔️ 初始化今日战场 (Devnet)",
+        "init_loading": "初始化中...",
+        "manual_settle": "🔧 手动结算",
+        "settle_loading": "结算中...",
+        "reset_game": "🔄 重置游戏 (新建)",
+        "admin_tools": "管理员工具 - 当前Topic: {{topic}}"
+    },
+    "arena": {
+        "connect_wallet": "连接钱包下注",
+        "bet_red": "BET RED",
+        "bet_blue": "BET BLUE",
+        "battle_ended": "今日战斗已结束！",
+        "winner": "获胜方",
+        "you_won": "恭喜你押中了！快领取你的奖励吧！",
+        "you_lost": "很遗憾，你押错了。下次再接再厉！",
+        "no_bet": "你今天没有参与下注",
+        "claimed": "已领取奖励 ✓",
+        "claim_reward": "🎁 领取奖励",
+        "claiming": "领取中...",
+        "better_luck": "下次好运 😢",
+        "winner_takes_all": "赢家通吃！",
+        "ended": "已落幕",
+        "team_red_collection": "{{name}} 集合",
+        "team_blue_collection": "{{name}} 大队",
+        "team_red": "Team Red",
+        "team_blue": "Team Blue"
+    }
+}
