@@ -130,7 +130,8 @@ func DeleteArena(c *gin.Context) {
 // convertToResponse 将数据库模型转换为API响应格式
 func convertToResponse(config *models.ArenaConfig) models.ArenaResponse {
 	return models.ArenaResponse{
-		Date: config.Date,
+		Date:         config.Date,
+		TopicVersion: config.TopicVersion, // 游戏版本号，用于链上PDA派生
 		TeamA: models.TeamConfig{
 			Name:   config.TeamAName,
 			Title:  config.TeamATitle,

@@ -32,15 +32,17 @@ function GameContent() {
   const program = useMemeArenaProgram();
   const { toast, showToast, hideToast } = useToast();
 
-  // Topic 版本号（用于测试重置）
-  const [topicVersion, setTopicVersion] = useState(() => {
-    // 从 localStorage 读取版本号
-    const saved = localStorage.getItem('meme_arena_topic_version');
-    return saved ? parseInt(saved, 10) : 0;
-  });
+  // 阵营配置（从后端获取）- 必须在 TOPIC 之前声明，因为 TOPIC 依赖 topic_version
+  const [arenaConfig, setArenaConfig] = useState<ArenaConfig>(DEFAULT_ARENA_CONFIG);
 
-  // 动态生成 TOPIC
-  const TOPIC = useMemo(() => getTodayTopic(topicVersion), [topicVersion]);
+  // Topic 版本号（从后端配置获取，确保所有用户看到同一个游戏）
+  // 动态生成 TOPIC（使用后端配置的版本号）
+  const TOPIC = useMemo(() => getTodayTopic(arenaConfig.topic_version || 0), [arenaConfig.topic_version]);
+  
+  // 清理旧的 localStorage 版本号（防止遗留问题）
+  useEffect(() => {
+    localStorage.removeItem('meme_arena_topic_version');
+  }, []);
 
   // 判断当前用户是否是管理员
   const isAdmin = useMemo(() => {
@@ -52,9 +54,6 @@ function GameContent() {
   const [loading, setLoading] = useState(false);
   const [poolA, setPoolA] = useState(0);
   const [poolB, setPoolB] = useState(0);
-
-  // 阵营配置（从后端获取）
-  const [arenaConfig, setArenaConfig] = useState<ArenaConfig>(DEFAULT_ARENA_CONFIG);
 
   // 用户下注记录
   const [userBet, setUserBet] = useState<any>(null);
@@ -312,18 +311,6 @@ function GameContent() {
     }
   }, [program, publicKey, userBet, gamePda, showToast, fetchUserBet]);
 
-  // 重置游戏（测试用）- 通过改变 topic 版本创建新游戏
-  const handleResetGame = useCallback(() => {
-    const newVersion = topicVersion + 1;
-    setTopicVersion(newVersion);
-    localStorage.setItem('meme_arena_topic_version', String(newVersion));
-    setGameAccount(null);
-    setUserBet(null);
-    setPoolA(0);
-    setPoolB(0);
-    showToast(`游戏已重置！新版本: v${newVersion}`, "success");
-  }, [topicVersion, showToast]);
-
   // 手动结算（测试用）
   const handleManualSettle = useCallback(async () => {
     if (!program || !publicKey || !gameAccount) return;
@@ -504,17 +491,27 @@ function GameContent() {
               </div>
             )}
 
-            {/* Initialize Button (仅管理员可见) */}
-            {!gameAccount && program && isAdmin && (
-              <div className="mb-8 p-4 border border-red-500/50 bg-red-900/20 rounded-xl">
-                <p className="mb-2 text-red-300">{t('app.not_initialized', { topic: TOPIC })}</p>
-                <button
-                  onClick={handleInitialize}
-                  disabled={loading}
-                  className="px-6 py-2 bg-red-600 hover:bg-red-500 rounded font-bold"
-                >
-                  {loading ? t('app.init_loading') : t('app.init_button')}
-                </button>
+            {/* 游戏未初始化提示 */}
+            {!gameAccount && program && (
+              <div className="mb-8 p-6 border border-purple-500/50 bg-purple-900/20 rounded-xl text-center">
+                <div className="text-4xl mb-4">🎮</div>
+                <h3 className="text-xl font-bold text-purple-300 mb-2">
+                  {isAdmin ? t('app.not_initialized', { topic: TOPIC }) : '游戏准备中...'}
+                </h3>
+                <p className="text-gray-400 text-sm mb-4">
+                  {isAdmin 
+                    ? '请点击下方按钮初始化今日战斗' 
+                    : '管理员正在准备今日战斗，请稍候刷新页面'}
+                </p>
+                {isAdmin && (
+                  <button
+                    onClick={handleInitialize}
+                    disabled={loading}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl font-bold text-white shadow-lg"
+                  >
+                    {loading ? t('app.init_loading') : '🚀 开始今日战斗'}
+                  </button>
+                )}
               </div>
             )}
 
@@ -522,8 +519,8 @@ function GameContent() {
             {isAdmin && gameAccount && (
               <div className="mb-4 p-4 border border-yellow-500/50 bg-yellow-900/20 rounded-xl">
                 <p className="text-yellow-300 text-sm mb-2">{t('app.admin_tools', { topic: TOPIC })}</p>
-                <div className="flex gap-2 flex-wrap">
-                  {/* 手动结算按钮 */}
+                <div className="flex gap-2 flex-wrap items-center">
+                  {/* 游戏进行中：显示手动结算按钮 */}
                   {gameAccount.status?.open !== undefined && (
                     <button
                       onClick={handleManualSettle}
@@ -533,14 +530,23 @@ function GameContent() {
                       {loading ? t('app.settle_loading') : t('app.manual_settle')}
                     </button>
                   )}
-                  {/* 重置游戏按钮 */}
-                  <button
-                    onClick={handleResetGame}
-                    disabled={loading}
-                    className="px-6 py-2 bg-red-600 hover:bg-red-500 rounded font-bold text-sm"
-                  >
-                    {t('app.reset_game')}
-                  </button>
+                  {/* 游戏已结算：直接开始新游戏（需要先在后台修改版本号） */}
+                  {gameAccount.status?.settled !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-400 text-sm">✅ 游戏已结算</span>
+                      <span className="text-gray-400 text-sm">→</span>
+                      <button
+                        onClick={handleInitialize}
+                        disabled={loading}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded font-bold text-sm text-white"
+                      >
+                        {loading ? '初始化中...' : '🚀 开始新游戏'}
+                      </button>
+                    </div>
+                  )}
+                  <span className="text-gray-500 text-xs ml-2">
+                    (当前版本: v{arenaConfig.topic_version || 0})
+                  </span>
                 </div>
               </div>
             )}

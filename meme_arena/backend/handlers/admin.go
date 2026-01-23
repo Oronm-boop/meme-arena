@@ -60,9 +60,16 @@ func AdminEditPage(c *gin.Context) {
 
 // AdminSave 保存配置（表单提交）
 func AdminSave(c *gin.Context) {
+	// 解析版本号
+	topicVersion := 0
+	if v, err := strconv.Atoi(c.PostForm("topic_version")); err == nil {
+		topicVersion = v
+	}
+
 	// 解析表单数据
 	config := models.ArenaConfig{
-		Date: c.PostForm("date"),
+		Date:         c.PostForm("date"),
+		TopicVersion: topicVersion, // 游戏版本号
 		// Team A
 		TeamAName:   c.PostForm("team_a_name"),
 		TeamATitle:  c.PostForm("team_a_title"),

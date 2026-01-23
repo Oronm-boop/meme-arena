@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.title}} - Meme Arena</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -25,46 +27,70 @@
                     </div>
                 </div>
 
+                <!-- 游戏版本 -->
+                <div class="form-section">
+                    <h2>🎮 游戏版本</h2>
+                    <div class="form-group">
+                        <label for="topic_version">版本号</label>
+                        <input type="number" id="topic_version" name="topic_version" 
+                            value="{{if .config.TopicVersion}}{{.config.TopicVersion}}{{else}}0{{end}}" 
+                            min="0" max="99">
+                        <small>
+                            <strong style="color: #f59e0b;">⚠️ 重要：</strong>修改版本号会创建一个新的链上游戏！<br>
+                            当前游戏Topic: <code>MemeArena_{{.config.Date}}{{if .config.TopicVersion}}_v{{.config.TopicVersion}}{{end}}</code><br>
+                            如果需要"重置"当天的游戏（提前结算后开新局），请增加版本号并在前端重新初始化。
+                        </small>
+                    </div>
+                </div>
+
                 <!-- 红队配置 -->
                 <div class="form-section team-a">
                     <h2>🔴 红队 (Team A)</h2>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="team_a_name">角色名称</label>
-                            <input type="text" id="team_a_name" name="team_a_name" value="{{.config.TeamAName}}" placeholder="如：蔡徐坤">
+                            <input type="text" id="team_a_name" name="team_a_name" value="{{.config.TeamAName}}"
+                                placeholder="如：蔡徐坤">
                         </div>
                         <div class="form-group">
                             <label for="team_a_title">称号</label>
-                            <input type="text" id="team_a_title" name="team_a_title" value="{{.config.TeamATitle}}" placeholder="如：练习生">
+                            <input type="text" id="team_a_title" name="team_a_title" value="{{.config.TeamATitle}}"
+                                placeholder="如：练习生">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="team_a_slogan">口号/台词</label>
-                        <input type="text" id="team_a_slogan" name="team_a_slogan" value="{{.config.TeamASlogan}}" placeholder="如：鸡你太美...">
+                        <input type="text" id="team_a_slogan" name="team_a_slogan" value="{{.config.TeamASlogan}}"
+                            placeholder="如：鸡你太美...">
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label for="team_a_image">主图 URL</label>
                             <div class="upload-group">
-                                <input type="url" id="team_a_image" name="team_a_image" value="{{.config.TeamAImage}}" placeholder="https://...">
-                                <button type="button" class="btn btn-small" onclick="uploadImage('team_a_image')">上传</button>
+                                <input type="url" id="team_a_image" name="team_a_image" value="{{.config.TeamAImage}}"
+                                    placeholder="https://...">
+                                <button type="button" class="btn btn-small"
+                                    onclick="uploadImage('team_a_image')">上传</button>
                             </div>
                             <div id="team_a_image_preview" class="image-preview"></div>
                         </div>
                         <div class="form-group">
                             <label for="team_a_color">主题色</label>
-                            <input type="color" id="team_a_color" name="team_a_color" value="{{if .config.TeamAColor}}{{.config.TeamAColor}}{{else}}#ec4899{{end}}">
+                            <input type="color" id="team_a_color" name="team_a_color"
+                                value="{{if .config.TeamAColor}}{{.config.TeamAColor}}{{else}}#ec4899{{end}}">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="team_a_memes">表情包 URLs（每行一个）</label>
-                        <textarea id="team_a_memes" name="team_a_memes" rows="4" placeholder="https://example.com/meme1.jpg&#10;https://example.com/meme2.jpg">{{.config.TeamAMemes}}</textarea>
+                        <textarea id="team_a_memes" name="team_a_memes" rows="4"
+                            placeholder="https://example.com/meme1.jpg&#10;https://example.com/meme2.jpg">{{.config.TeamAMemes}}</textarea>
                         <div class="upload-btn-row">
-                            <button type="button" class="btn btn-small" onclick="uploadMemes('team_a_memes')">批量上传表情包</button>
+                            <button type="button" class="btn btn-small"
+                                onclick="uploadMemes('team_a_memes')">批量上传表情包</button>
                         </div>
                     </div>
                 </div>
@@ -72,43 +98,51 @@
                 <!-- 蓝队配置 -->
                 <div class="form-section team-b">
                     <h2>🔵 蓝队 (Team B)</h2>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="team_b_name">角色名称</label>
-                            <input type="text" id="team_b_name" name="team_b_name" value="{{.config.TeamBName}}" placeholder="如：范小勤">
+                            <input type="text" id="team_b_name" name="team_b_name" value="{{.config.TeamBName}}"
+                                placeholder="如：范小勤">
                         </div>
                         <div class="form-group">
                             <label for="team_b_title">称号</label>
-                            <input type="text" id="team_b_title" name="team_b_title" value="{{.config.TeamBTitle}}" placeholder="如：挖掘机">
+                            <input type="text" id="team_b_title" name="team_b_title" value="{{.config.TeamBTitle}}"
+                                placeholder="如：挖掘机">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="team_b_slogan">口号/台词</label>
-                        <input type="text" id="team_b_slogan" name="team_b_slogan" value="{{.config.TeamBSlogan}}" placeholder="如：我要开发5G...">
+                        <input type="text" id="team_b_slogan" name="team_b_slogan" value="{{.config.TeamBSlogan}}"
+                            placeholder="如：我要开发5G...">
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label for="team_b_image">主图 URL</label>
                             <div class="upload-group">
-                                <input type="url" id="team_b_image" name="team_b_image" value="{{.config.TeamBImage}}" placeholder="https://...">
-                                <button type="button" class="btn btn-small" onclick="uploadImage('team_b_image')">上传</button>
+                                <input type="url" id="team_b_image" name="team_b_image" value="{{.config.TeamBImage}}"
+                                    placeholder="https://...">
+                                <button type="button" class="btn btn-small"
+                                    onclick="uploadImage('team_b_image')">上传</button>
                             </div>
                             <div id="team_b_image_preview" class="image-preview"></div>
                         </div>
                         <div class="form-group">
                             <label for="team_b_color">主题色</label>
-                            <input type="color" id="team_b_color" name="team_b_color" value="{{if .config.TeamBColor}}{{.config.TeamBColor}}{{else}}#3b82f6{{end}}">
+                            <input type="color" id="team_b_color" name="team_b_color"
+                                value="{{if .config.TeamBColor}}{{.config.TeamBColor}}{{else}}#3b82f6{{end}}">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="team_b_memes">表情包 URLs（每行一个）</label>
-                        <textarea id="team_b_memes" name="team_b_memes" rows="4" placeholder="https://example.com/meme1.jpg&#10;https://example.com/meme2.jpg">{{.config.TeamBMemes}}</textarea>
+                        <textarea id="team_b_memes" name="team_b_memes" rows="4"
+                            placeholder="https://example.com/meme1.jpg&#10;https://example.com/meme2.jpg">{{.config.TeamBMemes}}</textarea>
                         <div class="upload-btn-row">
-                            <button type="button" class="btn btn-small" onclick="uploadMemes('team_b_memes')">批量上传表情包</button>
+                            <button type="button" class="btn btn-small"
+                                onclick="uploadMemes('team_b_memes')">批量上传表情包</button>
                         </div>
                     </div>
                 </div>
@@ -141,7 +175,7 @@
         }
 
         // 单文件上传处理
-        document.getElementById('fileInput').addEventListener('change', async function(e) {
+        document.getElementById('fileInput').addEventListener('change', async function (e) {
             const file = e.target.files[0];
             if (!file) return;
 
@@ -174,7 +208,7 @@
         });
 
         // 多文件上传处理
-        document.getElementById('filesInput').addEventListener('change', async function(e) {
+        document.getElementById('filesInput').addEventListener('change', async function (e) {
             const files = e.target.files;
             if (!files.length) return;
 
@@ -208,7 +242,7 @@
 
         // 图片预览功能
         document.querySelectorAll('input[type="url"]').forEach(input => {
-            input.addEventListener('change', function() {
+            input.addEventListener('change', function () {
                 const url = this.value;
                 const previewDiv = document.getElementById(this.id + '_preview');
                 if (previewDiv && url) {
@@ -226,4 +260,5 @@
         });
     </script>
 </body>
+
 </html>

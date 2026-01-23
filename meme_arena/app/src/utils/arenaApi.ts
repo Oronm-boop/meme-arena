@@ -15,7 +15,8 @@ export interface TeamConfig {
 
 // 阵营配置响应
 export interface ArenaConfig {
-  date: string;      // 日期 "2026-01-22"
+  date: string;           // 日期 "2026-01-22"
+  topic_version: number;  // 游戏版本号，用于链上PDA派生（0 = 无后缀，1 = _v1，以此类推）
   team_a: TeamConfig;
   team_b: TeamConfig;
 }
@@ -23,6 +24,7 @@ export interface ArenaConfig {
 // 默认配置（当 API 获取失败时使用）
 export const DEFAULT_ARENA_CONFIG: ArenaConfig = {
   date: new Date().toISOString().split('T')[0],
+  topic_version: 0,  // 默认版本为 0
   team_a: {
     name: '蔡徐坤',
     title: '练习生',

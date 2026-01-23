@@ -13,6 +13,10 @@ type ArenaConfig struct {
 	// 日期（唯一索引）
 	Date string `json:"date" gorm:"type:varchar(20);uniqueIndex"` // "2026-01-22"
 
+	// Topic 版本号（用于链上游戏PDA派生，修改此值会创建新游戏）
+	// 0 = MemeArena_2026-01-22, 1 = MemeArena_2026-01-22_v1, 以此类推
+	TopicVersion int `json:"topic_version" gorm:"default:0"`
+
 	// Team A (红队)
 	TeamAName   string `json:"team_a_name" gorm:"type:varchar(100)"`   // "蔡徐坤"
 	TeamATitle  string `json:"team_a_title" gorm:"type:varchar(100)"`  // "练习生"
@@ -73,7 +77,8 @@ type TeamConfig struct {
 
 // ArenaResponse API响应结构
 type ArenaResponse struct {
-	Date   string     `json:"date"`
-	TeamA  TeamConfig `json:"team_a"`
-	TeamB  TeamConfig `json:"team_b"`
+	Date         string     `json:"date"`
+	TopicVersion int        `json:"topic_version"` // 游戏版本号，用于链上PDA派生
+	TeamA        TeamConfig `json:"team_a"`
+	TeamB        TeamConfig `json:"team_b"`
 }
