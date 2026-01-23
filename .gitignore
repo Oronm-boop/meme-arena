@@ -1,3 +1,4 @@
+# User specified & General
 .anchor
 .DS_Store
 target
@@ -5,4 +6,43 @@ target
 node_modules
 test-ledger
 .yarn
-backend/.idea/ 
+
+# IDE
+.idea/
+.vscode/
+.vscode
+*.swp
+*.swo
+.iml
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Anchor / Rust
+.anchor/
+test-ledger/
+**/*.rs.bk
+
+# Node.js / Frontend (App)
+app/node_modules/
+app/dist/
+app/.env
+app/.env.local
+app/.env.development.local
+app/.env.test.local
+app/.env.production.local
+app/npm-debug.log*
+app/yarn-debug.log*
+app/yarn-error.log*
+app/.vercel/
+
+# Backend / Go
+backend/server
+backend/*.exe
+backend/*.log
+backend/go.work
+backend/bin/
+
+# Vercel
+.vercel
