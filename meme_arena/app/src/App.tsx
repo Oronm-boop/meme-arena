@@ -368,7 +368,7 @@ function GameContent() {
     if (!program || !publicKey) return;
 
     const team = betModal.team;
-    const teamName = team === "A" ? "练习生" : "挖掘机";
+    const teamName = team === "A" ? arenaConfig.team_a.name : arenaConfig.team_b.name;
     const amountLamports = new BN(amountSOL * 1e9);
     const side = team === "A" ? { teamA: {} } : { teamB: {} };
 
